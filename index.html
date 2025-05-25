@@ -276,15 +276,15 @@
             .container {
                 padding: 30px 20px;
             }
-            
+
             h1 {
                 font-size: 2em;
             }
-            
+
             .radio-group {
                 flex-direction: column;
             }
-            
+
             .carbon-amount {
                 font-size: 2.5em;
             }
@@ -299,14 +299,14 @@
         <div class="form-section">
             <label for="travelerType">Traveler Type</label>
             <div class="radio-group">
-                <div class="radio-option" onclick="selectTravelerType('individual')">
+                <div class="radio-option" onclick="selectTravelerType('individual', this)">
                     <input type="radio" name="travelerType" value="individual" checked>
                     <div>
                         <strong>Individual</strong>
                         <div class="aircraft-info">1-10 passengers</div>
                     </div>
                 </div>
-                <div class="radio-option" onclick="selectTravelerType('organization')">
+                <div class="radio-option" onclick="selectTravelerType('organization', this)">
                     <input type="radio" name="travelerType" value="organization">
                     <div>
                         <strong>Organization</strong>
@@ -414,20 +414,20 @@
             <div class="offset-section">
                 <h2 class="offset-title">Offset Your Emissions</h2>
                 <p>Choose from these certified carbon offset projects:</p>
-                
+
                 <div class="offset-grid">
                     <a href="https://www.goldstandard.org/projects" target="_blank" class="offset-card">
                         <h3>Nigerian Clean Cookstoves</h3>
                         <p>Support clean cooking solutions that reduce emissions and improve health in Nigerian communities.</p>
                         <span class="offset-badge">Gold Standard Certified</span>
                     </a>
-                    
+
                     <a href="https://registry.verra.org/app/search/VCS" target="_blank" class="offset-card">
                         <h3>Savanna Restoration Project</h3>
                         <p>Help restore degraded savanna lands in Northern Nigeria through sustainable land management.</p>
                         <span class="offset-badge">VCS Verified</span>
                     </a>
-                    
+
                     <a href="https://www.climateimpact.com/carbon-offsets/" target="_blank" class="offset-card">
                         <h3>Lagos Solar Initiative</h3>
                         <p>Fund solar panel installations in Lagos communities, reducing reliance on fossil fuels.</p>
@@ -467,16 +467,19 @@
 
         let selectedTravelerType = 'individual';
 
-        function selectTravelerType(type) {
+        function selectTravelerType(type, element) {
             selectedTravelerType = type;
             document.querySelectorAll('.radio-option').forEach(option => {
                 option.classList.remove('selected');
             });
-            event.currentTarget.classList.add('selected');
-            
+            element.classList.add('selected');
+
+            // Update radio button
+            document.querySelector(`input[value="${type}"]`).checked = true;
+
             const passengersInput = document.getElementById('passengers');
             const passengersLabel = document.getElementById('passengersLabel');
-            
+
             if (type === 'individual') {
                 passengersInput.max = 10;
                 passengersInput.value = Math.min(passengersInput.value, 10);
@@ -501,7 +504,7 @@
         function calculateDistance() {
             const departure = document.getElementById('departure').value;
             const arrival = document.getElementById('arrival').value;
-            
+
             if (departure && arrival && departure !== arrival) {
                 const dep = airports[departure];
                 const arr = airports[arrival];
@@ -517,46 +520,57 @@
             const aircraft = document.getElementById('aircraft').value;
             const passengers = parseInt(document.getElementById('passengers').value);
             const tripType = document.getElementById('tripType').value;
-            
+
             // Validation
             if (!departure || !arrival || !aircraft || !passengers) {
                 alert('Please fill in all fields');
                 return;
             }
-            
+
             if (departure === arrival) {
                 alert('Departure and arrival airports must be different');
                 return;
             }
-            
+
             // Calculate distance
             const distance = calculateDistance();
             const effectiveDistance = tripType === 'return' ? distance * 2 : distance;
-            
+
             // Calculate carbon emissions
             const emissionFactor = emissionFactors[aircraft];
             const carbonEmissions = effectiveDistance * emissionFactor * passengers;
-            
+
             // Update results
             document.getElementById('carbonAmount').textContent = `${carbonEmissions.toFixed(1)} kg CO₂`;
             document.getElementById('distance').textContent = `${effectiveDistance} km`;
             document.getElementById('aircraftType').textContent = aircraft;
             document.getElementById('passengerCount').textContent = passengers;
             document.getElementById('tripTypeResult').textContent = tripType === 'return' ? 'Return' : 'One Way';
-            
+
             // Calculate equivalent
             const treesNeeded = Math.ceil(carbonEmissions / 21); // Average tree absorbs 21kg CO2/year
             const carKm = Math.round(carbonEmissions / 0.12); // Average car emits 0.12kg CO2/km
             document.getElementById('carbonEquivalent').textContent = 
                 `Equivalent to ${treesNeeded} trees needed for 1 year or driving ${carKm} km`;
-            
+
             // Show results
             document.getElementById('results').style.display = 'block';
             document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         // Initialize first radio option as selected
-        document.querySelector('.radio-option').classList.add('selected');
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelector('.radio-option').classList.add('selected');
+
+            // Add event listeners to ensure dropdowns work
+            document.getElementById('departure').addEventListener('change', calculateDistance);
+            document.getElementById('arrival').addEventListener('change', calculateDistance);
+
+            // Ensure calculate button works
+            document.querySelector('.calculate-btn').addEventListener('click', calculateCarbon);
+
+            console.log('Carbon calculator initialized');
+        });
     </script>
 </body>
 </html>

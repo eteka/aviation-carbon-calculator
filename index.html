@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nigerian Aviation Carbon Calculator</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         * {
             margin: 0;
@@ -318,47 +319,18 @@
 
         <div class="form-section">
             <label for="departure">Departure Airport</label>
-            <select id="departure" onchange="calculateDistance()">
-                <option value="">Select departure airport</option>
-                <option value="LOS">Lagos - Murtala Muhammed (LOS)</option>
-                <option value="ABV">Abuja - Nnamdi Azikiwe (ABV)</option>
-                <option value="KAN">Kano - Mallam Aminu Kano (KAN)</option>
-                <option value="PHC">Port Harcourt (PHC)</option>
-                <option value="ENU">Enugu - Akanu Ibiam (ENU)</option>
-                <option value="CBQ">Calabar - Margaret Ekpo (CBQ)</option>
-                <option value="KAD">Kaduna (KAD)</option>
-                <option value="IBA">Ibadan (IBA)</option>
-                <option value="JOS">Jos - Yakubu Gowon (JOS)</option>
-                <option value="MDI">Maiduguri (MDI)</option>
-                <option value="BNI">Benin City (BNI)</option>
-                <option value="ILR">Ilorin (ILR)</option>
-                <option value="AKR">Akure (AKR)</option>
-                <option value="YOL">Yola (YOL)</option>
-                <option value="SOK">Sokoto - Sultan Abubakar (SOK)</option>
-            </select>
+            <input id="departure" list="airportsList" placeholder="Select departure airport" />
         </div>
 
         <div class="form-section">
             <label for="arrival">Arrival Airport</label>
-            <select id="arrival" onchange="calculateDistance()">
-                <option value="">Select arrival airport</option>
-                <option value="LOS">Lagos - Murtala Muhammed (LOS)</option>
-                <option value="ABV">Abuja - Nnamdi Azikiwe (ABV)</option>
-                <option value="KAN">Kano - Mallam Aminu Kano (KAN)</option>
-                <option value="PHC">Port Harcourt (PHC)</option>
-                <option value="ENU">Enugu - Akanu Ibiam (ENU)</option>
-                <option value="CBQ">Calabar - Margaret Ekpo (CBQ)</option>
-                <option value="KAD">Kaduna (KAD)</option>
-                <option value="IBA">Ibadan (IBA)</option>
-                <option value="JOS">Jos - Yakubu Gowon (JOS)</option>
-                <option value="MDI">Maiduguri (MDI)</option>
-                <option value="BNI">Benin City (BNI)</option>
-                <option value="ILR">Ilorin (ILR)</option>
-                <option value="AKR">Akure (AKR)</option>
-                <option value="YOL">Yola (YOL)</option>
-                <option value="SOK">Sokoto - Sultan Abubakar (SOK)</option>
-            </select>
+            <input id="arrival" list="airportsList" placeholder="Select arrival airport" />
         </div>
+
+        <datalist id="airportsList"></datalist>
+
+        <div id="map" style="height: 400px; margin-bottom: 20px;"></div>
+
 
         <div class="form-section">
             <label for="aircraft">Aircraft Type</label>
@@ -438,25 +410,53 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // Airport coordinates for distance calculation
-        const airports = {
-            'LOS': { lat: 6.5774, lon: 3.3219, name: 'Lagos' },
-            'ABV': { lat: 9.0065, lon: 7.2632, name: 'Abuja' },
-            'KAN': { lat: 12.0475, lon: 8.5242, name: 'Kano' },
-            'PHC': { lat: 5.0150, lon: 6.9496, name: 'Port Harcourt' },
-            'ENU': { lat: 6.4742, lon: 7.5619, name: 'Enugu' },
-            'CBQ': { lat: 4.9757, lon: 8.3470, name: 'Calabar' },
-            'KAD': { lat: 10.6963, lon: 7.3201, name: 'Kaduna' },
-            'IBA': { lat: 7.3625, lon: 3.8786, name: 'Ibadan' },
-            'JOS': { lat: 9.6398, lon: 8.8690, name: 'Jos' },
-            'MDI': { lat: 11.8552, lon: 13.0829, name: 'Maiduguri' },
-            'BNI': { lat: 6.3170, lon: 5.5997, name: 'Benin City' },
-            'ILR': { lat: 8.4402, lon: 4.4941, name: 'Ilorin' },
-            'AKR': { lat: 7.2467, lon: 5.3015, name: 'Akure' },
-            'YOL': { lat: 9.2575, lon: 12.4305, name: 'Yola' },
-            'SOK': { lat: 12.9160, lon: 5.2075, name: 'Sokoto' }
-        };
+        const airportsByCode = {};
+        let airportsList = [];
+        let activeInput = 'departure';
+        let map;
+
+        function parseAirportCode(value) {
+            return value ? value.split(' ')[0].toUpperCase() : '';
+        }
+
+        function populateDatalist() {
+            const list = document.getElementById('airportsList');
+            list.innerHTML = '';
+            airportsList.forEach(ap => {
+                const opt = document.createElement('option');
+                opt.value = `${ap.code} - ${ap.name}`;
+                list.appendChild(opt);
+            });
+        }
+
+        function initMap() {
+            map = L.map('map').setView([9, 8], 6);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            airportsList.forEach(ap => {
+                L.marker([ap.lat, ap.lon]).addTo(map)
+                    .bindPopup(`${ap.name} (${ap.code})`)
+                    .on('click', () => {
+                        const id = activeInput;
+                        document.getElementById(id).value = `${ap.code} - ${ap.name}`;
+                        calculateDistance();
+                    });
+            });
+        }
+
+        async function loadAirports() {
+            const response = await fetch('data/airports.json');
+            airportsList = await response.json();
+            airportsList.forEach(a => {
+                airportsByCode[a.code] = a;
+            });
+            populateDatalist();
+            initMap();
+        }
 
         // Emission factors (kg CO2 per passenger per km)
         const emissionFactors = {
@@ -502,21 +502,23 @@
         }
 
         function calculateDistance() {
-            const departure = document.getElementById('departure').value;
-            const arrival = document.getElementById('arrival').value;
+            const departureCode = parseAirportCode(document.getElementById('departure').value);
+            const arrivalCode = parseAirportCode(document.getElementById('arrival').value);
 
-            if (departure && arrival && departure !== arrival) {
-                const dep = airports[departure];
-                const arr = airports[arrival];
-                const distance = calculateGreatCircleDistance(dep.lat, dep.lon, arr.lat, arr.lon);
-                return Math.round(distance);
+            if (departureCode && arrivalCode && departureCode !== arrivalCode) {
+                const dep = airportsByCode[departureCode];
+                const arr = airportsByCode[arrivalCode];
+                if (dep && arr) {
+                    const distance = calculateGreatCircleDistance(dep.lat, dep.lon, arr.lat, arr.lon);
+                    return Math.round(distance);
+                }
             }
             return 0;
         }
 
         function calculateCarbon() {
-            const departure = document.getElementById('departure').value;
-            const arrival = document.getElementById('arrival').value;
+            const departure = parseAirportCode(document.getElementById('departure').value);
+            const arrival = parseAirportCode(document.getElementById('arrival').value);
             const aircraft = document.getElementById('aircraft').value;
             const passengers = parseInt(document.getElementById('passengers').value);
             const tripType = document.getElementById('tripType').value;
@@ -562,11 +564,14 @@
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelector('.radio-option').classList.add('selected');
 
-            // Add event listeners to ensure dropdowns work
-            document.getElementById('departure').addEventListener('change', calculateDistance);
-            document.getElementById('arrival').addEventListener('change', calculateDistance);
+            loadAirports();
 
-            // Ensure calculate button works
+            document.getElementById('departure').addEventListener('focus', () => activeInput = 'departure');
+            document.getElementById('arrival').addEventListener('focus', () => activeInput = 'arrival');
+
+            document.getElementById('departure').addEventListener('input', calculateDistance);
+            document.getElementById('arrival').addEventListener('input', calculateDistance);
+
             document.querySelector('.calculate-btn').addEventListener('click', calculateCarbon);
 
             console.log('Carbon calculator initialized');

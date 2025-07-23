@@ -1,0 +1,17 @@
+[
+    {"code": "LOS", "name": "Lagos - Murtala Muhammed", "lat": 6.5774, "lon": 3.3219},
+    {"code": "ABV", "name": "Abuja - Nnamdi Azikiwe", "lat": 9.0065, "lon": 7.2632},
+    {"code": "KAN", "name": "Kano - Mallam Aminu Kano", "lat": 12.0475, "lon": 8.5242},
+    {"code": "PHC", "name": "Port Harcourt", "lat": 5.0150, "lon": 6.9496},
+    {"code": "ENU", "name": "Enugu - Akanu Ibiam", "lat": 6.4742, "lon": 7.5619},
+    {"code": "CBQ", "name": "Calabar - Margaret Ekpo", "lat": 4.9757, "lon": 8.3470},
+    {"code": "KAD", "name": "Kaduna", "lat": 10.6963, "lon": 7.3201},
+    {"code": "IBA", "name": "Ibadan", "lat": 7.3625, "lon": 3.8786},
+    {"code": "JOS", "name": "Jos - Yakubu Gowon", "lat": 9.6398, "lon": 8.8690},
+    {"code": "MDI", "name": "Maiduguri", "lat": 11.8552, "lon": 13.0829},
+    {"code": "BNI", "name": "Benin City", "lat": 6.3170, "lon": 5.5997},
+    {"code": "ILR", "name": "Ilorin", "lat": 8.4402, "lon": 4.4941},
+    {"code": "AKR", "name": "Akure", "lat": 7.2467, "lon": 5.3015},
+    {"code": "YOL", "name": "Yola", "lat": 9.2575, "lon": 12.4305},
+    {"code": "SOK", "name": "Sokoto - Sultan Abubakar", "lat": 12.9160, "lon": 5.2075}
+]

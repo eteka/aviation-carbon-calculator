@@ -336,9 +336,29 @@
             <label for="aircraft">Aircraft Type</label>
             <select id="aircraft">
                 <option value="">Select aircraft type</option>
-                <option value="RJ">Regional Jet (RJ) - e.g., CRJ900, ERJ145</option>
-                <option value="NB">Narrow Body (NB) - e.g., B737, A320</option>
-                <option value="WB">Wide Body (WB) - e.g., B777, A330</option>
+                <option value="CRJ">CRJ Series (Regional Jet)</option>
+                <option value="ERJ">ERJ Series (Regional Jet)</option>
+                <option value="B737">B737 / A320 Series (Narrow Body)</option>
+                <option value="B757">B757 Series (Narrow Body)</option>
+                <option value="B777">B777 / A330 (Wide Body)</option>
+                <option value="B787">B787 / A350 (Wide Body)</option>
+            </select>
+        </div>
+
+        <div class="form-section">
+            <label for="seatClass">Seat Class</label>
+            <select id="seatClass">
+                <option value="economy">Economy</option>
+                <option value="business">Business</option>
+                <option value="first">First</option>
+            </select>
+        </div>
+
+        <div class="form-section">
+            <label for="flightType">Flight Type</label>
+            <select id="flightType">
+                <option value="passenger">Passenger Flight</option>
+                <option value="cargo">Cargo Flight</option>
             </select>
         </div>
 
@@ -380,6 +400,14 @@
                 <div class="detail-item">
                     <div class="detail-label">Trip Type</div>
                     <div class="detail-value" id="tripTypeResult">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Seat Class</div>
+                    <div class="detail-value" id="seatClassResult">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Flight Type</div>
+                    <div class="detail-value" id="flightTypeResult">-</div>
                 </div>
             </div>
 
@@ -460,9 +488,23 @@
 
         // Emission factors (kg CO2 per passenger per km)
         const emissionFactors = {
-            'RJ': 0.180,  // Regional Jet
-            'NB': 0.115,  // Narrow Body
-            'WB': 0.095   // Wide Body
+            'CRJ': 0.165,  // CRJ Series
+            'ERJ': 0.175,  // ERJ Series
+            'B737': 0.115, // B737/A320 Series
+            'B757': 0.125, // B757 Series
+            'B777': 0.095, // B777/A330
+            'B787': 0.090  // B787/A350
+        };
+
+        const seatClassFactors = {
+            'economy': 1.0,
+            'business': 1.5,
+            'first': 2.5
+        };
+
+        const flightTypeAdjustments = {
+            'passenger': 1.0,
+            'cargo': 1.2
         };
 
         let selectedTravelerType = 'individual';
@@ -522,6 +564,8 @@
             const aircraft = document.getElementById('aircraft').value;
             const passengers = parseInt(document.getElementById('passengers').value);
             const tripType = document.getElementById('tripType').value;
+            const seatClass = document.getElementById('seatClass').value;
+            const flightType = document.getElementById('flightType').value;
 
             // Validation
             if (!departure || !arrival || !aircraft || !passengers) {
@@ -540,7 +584,9 @@
 
             // Calculate carbon emissions
             const emissionFactor = emissionFactors[aircraft];
-            const carbonEmissions = effectiveDistance * emissionFactor * passengers;
+            const seatFactor = seatClassFactors[seatClass];
+            const loadAdjustment = flightTypeAdjustments[flightType];
+            const carbonEmissions = effectiveDistance * emissionFactor * passengers * seatFactor * loadAdjustment;
 
             // Update results
             document.getElementById('carbonAmount').textContent = `${carbonEmissions.toFixed(1)} kg CO₂`;
@@ -548,6 +594,8 @@
             document.getElementById('aircraftType').textContent = aircraft;
             document.getElementById('passengerCount').textContent = passengers;
             document.getElementById('tripTypeResult').textContent = tripType === 'return' ? 'Return' : 'One Way';
+            document.getElementById('seatClassResult').textContent = seatClass.charAt(0).toUpperCase() + seatClass.slice(1);
+            document.getElementById('flightTypeResult').textContent = flightType === 'cargo' ? 'Cargo Flight' : 'Passenger Flight';
 
             // Calculate equivalent
             const treesNeeded = Math.ceil(carbonEmissions / 21); // Average tree absorbs 21kg CO2/year

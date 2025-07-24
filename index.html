@@ -381,6 +381,14 @@
                     <div class="detail-label">Trip Type</div>
                     <div class="detail-value" id="tripTypeResult">-</div>
                 </div>
+                <div class="detail-item">
+                    <div class="detail-label">Per Passenger Emissions</div>
+                    <div class="detail-value" id="perPassenger">0 kg CO₂</div>
+                </div>
+                <div class="detail-item" id="historicalItem" style="display:none;">
+                    <div class="detail-label">Avg Emissions (Route)</div>
+                    <div class="detail-value" id="averageEmission">-</div>
+                </div>
             </div>
 
             <div class="offset-section">
@@ -416,6 +424,8 @@
         let airportsList = [];
         let activeInput = 'departure';
         let map;
+        let routeLine;
+        let routeEmissions = {};
 
         function parseAirportCode(value) {
             return value ? value.split(' ')[0].toUpperCase() : '';
@@ -456,6 +466,15 @@
             });
             populateDatalist();
             initMap();
+        }
+
+        async function loadHistoricalEmissions() {
+            try {
+                const response = await fetch('data/historical_emissions.json');
+                routeEmissions = await response.json();
+            } catch (e) {
+                console.warn('Could not load historical emissions data', e);
+            }
         }
 
         // Emission factors (kg CO2 per passenger per km)
@@ -501,6 +520,21 @@
             return R * c;
         }
 
+        function drawRoute(depCode, arrCode) {
+            if (routeLine) {
+                map.removeLayer(routeLine);
+            }
+            const dep = airportsByCode[depCode];
+            const arr = airportsByCode[arrCode];
+            if (dep && arr) {
+                routeLine = L.polyline(
+                    [ [dep.lat, dep.lon], [arr.lat, arr.lon] ],
+                    { color: 'red' }
+                ).addTo(map);
+                map.fitBounds(routeLine.getBounds(), { padding: [20, 20] });
+            }
+        }
+
         function calculateDistance() {
             const departureCode = parseAirportCode(document.getElementById('departure').value);
             const arrivalCode = parseAirportCode(document.getElementById('arrival').value);
@@ -540,7 +574,8 @@
 
             // Calculate carbon emissions
             const emissionFactor = emissionFactors[aircraft];
-            const carbonEmissions = effectiveDistance * emissionFactor * passengers;
+            const carbonPerPassenger = effectiveDistance * emissionFactor;
+            const carbonEmissions = carbonPerPassenger * passengers;
 
             // Update results
             document.getElementById('carbonAmount').textContent = `${carbonEmissions.toFixed(1)} kg CO₂`;
@@ -548,6 +583,19 @@
             document.getElementById('aircraftType').textContent = aircraft;
             document.getElementById('passengerCount').textContent = passengers;
             document.getElementById('tripTypeResult').textContent = tripType === 'return' ? 'Return' : 'One Way';
+            document.getElementById('perPassenger').textContent = `${carbonPerPassenger.toFixed(1)} kg CO₂`;
+
+            const routeKey = `${departure}-${arrival}`;
+            const reverseKey = `${arrival}-${departure}`;
+            const avg = routeEmissions[routeKey] || routeEmissions[reverseKey];
+            if (avg) {
+                document.getElementById('historicalItem').style.display = 'block';
+                document.getElementById('averageEmission').textContent = `${avg} kg CO₂`;
+            } else {
+                document.getElementById('historicalItem').style.display = 'none';
+            }
+
+            drawRoute(departure, arrival);
 
             // Calculate equivalent
             const treesNeeded = Math.ceil(carbonEmissions / 21); // Average tree absorbs 21kg CO2/year
@@ -565,6 +613,7 @@
             document.querySelector('.radio-option').classList.add('selected');
 
             loadAirports();
+            loadHistoricalEmissions();
 
             document.getElementById('departure').addEventListener('focus', () => activeInput = 'departure');
             document.getElementById('arrival').addEventListener('focus', () => activeInput = 'arrival');
